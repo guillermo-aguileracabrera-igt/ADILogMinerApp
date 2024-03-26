@@ -24,7 +24,6 @@ namespace LoggerApp
         private const string reduceMultiSpace = @"[ ]{2,}";
         private int rows = 0;
         private Dictionary<FileInfo, List<List<string>>> dic = new Dictionary<FileInfo, List<List<string>>>();
-        private bool isDateRadioButtonChecked = false;
         private bool isDatesRangeRadioButtonChecked = false;
         private bool isTenResultsRadioButtonChecked = false;
         private bool isHundredResultsRadioButtonChecked = false;
@@ -38,8 +37,7 @@ namespace LoggerApp
             //Search group
             levelCheckBox.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
             fileNameCheckBox.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
-            datesRangeRadioButton.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
-            dateRadioButton.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
+            datesRangeRadioButtonCheckBox.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
             textCheckBox.CheckedChanged += new System.EventHandler(searchOptions_CheckedChanged);
 
             searchMessageTextBox.KeyUp += searchMessageTextBox_KeyUp;
@@ -48,8 +46,6 @@ namespace LoggerApp
             search1DateTimePicker.ValueChanged += search1DateTimePicker_ValueChanged;
             search2DateTimePicker.ValueChanged += search2DateTimePicker_ValueChanged;
             limitCheckBox.CheckedChanged += limitCheckBox_CheckedChanged;
-            dateRadioButton.Click += dateRadioButton_Click;
-            datesRangeRadioButton.Click += datesRangeRadioButton_Click;
 
             search1DateTimePicker.MaxDate = DateTime.Today;
             search1DateTimePicker.Value = search1DateTimePicker.MaxDate;
@@ -92,31 +88,8 @@ namespace LoggerApp
         //SEARCH
         private void searchOptions_CheckedChanged(object sender, EventArgs e)
         {
-            if (dateRadioButton.Checked)
+            if (datesRangeRadioButtonCheckBox.Checked)
             {
-                isDateRadioButtonChecked = true;
-                isDatesRangeRadioButtonChecked = false;
-                search1DateTimePicker.Enabled = true;
-                search2DateTimePicker.Enabled = false;
-
-                if (search1DateTimePicker.Enabled && search1DateTimePicker.Value <= DateTime.Now)
-                {
-                    searchBtn.Enabled = true;
-                }
-                else
-                {
-                    searchBtn.Enabled = false;
-                }  
-            }
-            else
-            {
-                isDateRadioButtonChecked = false;
-                search1DateTimePicker.Enabled = false;
-            }
-
-            if (datesRangeRadioButton.Checked)
-            {
-                isDateRadioButtonChecked = false;
                 isDatesRangeRadioButtonChecked = true;
                 search1DateTimePicker.Enabled = true;
                 search2DateTimePicker.Enabled = true;
@@ -191,30 +164,6 @@ namespace LoggerApp
             }
         }
 
-        private void dateRadioButton_Click(object sender, EventArgs e)
-        {
-            if (dateRadioButton.Checked && !isDateRadioButtonChecked) { 
-                dateRadioButton.Checked = false;
-            }
-            else
-            {
-                dateRadioButton.Checked = true;
-                isDateRadioButtonChecked = false;
-            }
-        }
-
-        private void datesRangeRadioButton_Click(object sender, EventArgs e)
-        {
-            if (datesRangeRadioButton.Checked && !isDatesRangeRadioButtonChecked) { 
-                datesRangeRadioButton.Checked = false;
-            }
-            else
-            {
-                datesRangeRadioButton.Checked = true;
-                isDatesRangeRadioButtonChecked = false;
-            }
-        }
-
         private void limitCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (limitCheckBox.Checked)
@@ -231,13 +180,13 @@ namespace LoggerApp
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand("SP_SEARCH_LOGS", conn))
+                using (SqlCommand cmd = new SqlCommand("Proc_Search_ADI_Logs", conn))
                 {
                     try
                     {
                         string msg = "";
-                        string sDate1 = "";
-                        string sDate2 = "";
+                        DateTime? sDate1 = null;
+                        DateTime? sDate2 = null;
                         string lvl = "";
                         string filename = "";
                         string limit = "0";
@@ -249,35 +198,15 @@ namespace LoggerApp
                         {
                             msg = CleanString(searchMessageTextBox.Text.Trim());
                         }
-                        if (dateRadioButton.Checked && search1DateTimePicker.Enabled && search1DateTimePicker.Value <= DateTime.Now)
+                        if (datesRangeRadioButtonCheckBox.Checked && search1DateTimePicker.Enabled && search2DateTimePicker.Enabled && search1DateTimePicker.Value <= search2DateTimePicker.Value && search2DateTimePicker.Value <= DateTime.Now)
                         {
-                            if(search1DateTimePicker.Value.Hour == 0 && search1DateTimePicker.Value.Minute == 0)
-                            {
-                                sDate1 = search1DateTimePicker.Value.ToString("yyyy-MM-dd");
-                            }
-                            else
-                            {
-                                sDate1 = search1DateTimePicker.Value.ToString("yyyy-MM-dd HH:mm");
-                            }
+                            sDate1 = search1DateTimePicker.Value;
+                            sDate2 = search2DateTimePicker.Value;
                         }
-                        if (datesRangeRadioButton.Checked && search1DateTimePicker.Enabled && search2DateTimePicker.Enabled && search1DateTimePicker.Value <= search2DateTimePicker.Value && search2DateTimePicker.Value <= DateTime.Now)
+                        if(!datesRangeRadioButtonCheckBox.Checked && !search1DateTimePicker.Enabled && !search2DateTimePicker.Enabled)
                         {
-                            if (search1DateTimePicker.Value.Hour == 0 && search1DateTimePicker.Value.Minute == 0)
-                            {
-                                sDate1 = search1DateTimePicker.Value.ToString("yyyy-MM-dd");
-                            }
-                            else
-                            {
-                                sDate1 = search1DateTimePicker.Value.ToString("yyyy-MM-dd HH:mm");
-                            }
-                            if (search2DateTimePicker.Value.Hour == 0 && search2DateTimePicker.Value.Minute == 0)
-                            {
-                                sDate2 = search2DateTimePicker.Value.ToString("yyyy-MM-dd");
-                            }
-                            else
-                            {
-                                sDate2 = search2DateTimePicker.Value.ToString("yyyy-MM-dd HH:mm");
-                            }
+                            sDate1 = null;
+                            sDate2 = null;
                         }
                         if (levelCheckBox.Checked && !String.IsNullOrWhiteSpace(levelTextBox.Text) && !String.IsNullOrEmpty(levelTextBox.Text))
                         {
@@ -378,16 +307,7 @@ namespace LoggerApp
 
         private void search1DateTimePicker_ValueChanged(object sender, EventArgs e)
         {
-            if (dateRadioButton.Checked)
-            {
-                if (search1DateTimePicker.Value > DateTime.Now)
-                {
-                    searchBtn.Enabled = false;
-
-                    return;
-                }
-            }
-            else if (datesRangeRadioButton.Checked)
+            if (datesRangeRadioButtonCheckBox.Checked)
             {
                 if (search2DateTimePicker.Value < search1DateTimePicker.Value)
                 {
@@ -430,9 +350,7 @@ namespace LoggerApp
             search2DateTimePicker.Value = search2DateTimePicker.MaxDate;
             search2DateTimePicker.Enabled = false;
             textCheckBox.Checked = false;
-            dateRadioButton.Checked = false;
-            isDateRadioButtonChecked = false;
-            datesRangeRadioButton.Checked = false;
+            datesRangeRadioButtonCheckBox.Checked = false;
             isDatesRangeRadioButtonChecked = false;
             levelCheckBox.Checked = false;
             fileNameCheckBox.Checked = false;
@@ -853,6 +771,11 @@ namespace LoggerApp
                     //MessageBox.Show(ex.Message);
                     WriteToFile($"Exception -> SearchText -> { ex.Message }");
                 }
+                finally
+                {
+                    reader.Close();
+                    reader.Dispose();
+                }
             }
 
             if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled)
@@ -947,7 +870,7 @@ namespace LoggerApp
                             if (lineCounter == 1)
                             {
                                 line = reader.ReadLine();
-                                continue;
+                                continue; 
                             }
                             logMsg = sb.ToString();
                             sb.Clear();
@@ -1061,13 +984,18 @@ namespace LoggerApp
 
                 return queries;
             }
+            finally
+            {
+                reader.Close();
+                reader.Dispose();
+            }
         }
 
         private int ExecQueries(List<string> query)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand("SP_INSERT_LOGS", conn))
+                using (SqlCommand cmd = new SqlCommand("Proc_Insert_ADI_Logs", conn))
                 {
                     try
                     {

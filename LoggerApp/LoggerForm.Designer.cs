@@ -34,8 +34,7 @@ namespace LoggerApp
             this.totalRowLbl = new System.Windows.Forms.Label();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.SearchGroupBox = new System.Windows.Forms.GroupBox();
-            this.datesRangeRadioButton = new System.Windows.Forms.RadioButton();
-            this.dateRadioButton = new System.Windows.Forms.RadioButton();
+            this.datesRangeRadioButtonCheckBox = new System.Windows.Forms.CheckBox();
             this.levelTextBox = new System.Windows.Forms.TextBox();
             this.search2DateTimePicker = new System.Windows.Forms.DateTimePicker();
             this.search1DateTimePicker = new System.Windows.Forms.DateTimePicker();
@@ -133,8 +132,7 @@ namespace LoggerApp
             // 
             // SearchGroupBox
             // 
-            this.SearchGroupBox.Controls.Add(this.datesRangeRadioButton);
-            this.SearchGroupBox.Controls.Add(this.dateRadioButton);
+            this.SearchGroupBox.Controls.Add(this.datesRangeRadioButtonCheckBox);
             this.SearchGroupBox.Controls.Add(this.levelTextBox);
             this.SearchGroupBox.Controls.Add(this.search2DateTimePicker);
             this.SearchGroupBox.Controls.Add(this.search1DateTimePicker);
@@ -152,29 +150,17 @@ namespace LoggerApp
             this.SearchGroupBox.Size = new System.Drawing.Size(758, 125);
             this.SearchGroupBox.TabIndex = 0;
             this.SearchGroupBox.TabStop = false;
-            this.SearchGroupBox.Text = "Search criteria:";
+            this.SearchGroupBox.Text = "Search existing records in the Database:";
             // 
-            // datesRangeRadioButton
+            // datesRangeRadioButtonCheckBox
             // 
-            this.datesRangeRadioButton.AutoSize = true;
-            this.datesRangeRadioButton.Location = new System.Drawing.Point(6, 94);
-            this.datesRangeRadioButton.Name = "datesRangeRadioButton";
-            this.datesRangeRadioButton.Size = new System.Drawing.Size(88, 17);
-            this.datesRangeRadioButton.TabIndex = 17;
-            this.datesRangeRadioButton.TabStop = true;
-            this.datesRangeRadioButton.Text = "Dates Range";
-            this.datesRangeRadioButton.UseVisualStyleBackColor = true;
-            // 
-            // dateRadioButton
-            // 
-            this.dateRadioButton.AutoSize = true;
-            this.dateRadioButton.Location = new System.Drawing.Point(6, 60);
-            this.dateRadioButton.Name = "dateRadioButton";
-            this.dateRadioButton.Size = new System.Drawing.Size(48, 17);
-            this.dateRadioButton.TabIndex = 5;
-            this.dateRadioButton.TabStop = true;
-            this.dateRadioButton.Text = "Date";
-            this.dateRadioButton.UseVisualStyleBackColor = true;
+            this.datesRangeRadioButtonCheckBox.AutoSize = true;
+            this.datesRangeRadioButtonCheckBox.Location = new System.Drawing.Point(6, 95);
+            this.datesRangeRadioButtonCheckBox.Name = "datesRangeRadioButtonCheckBox";
+            this.datesRangeRadioButtonCheckBox.Size = new System.Drawing.Size(89, 17);
+            this.datesRangeRadioButtonCheckBox.TabIndex = 18;
+            this.datesRangeRadioButtonCheckBox.Text = "Dates Range";
+            this.datesRangeRadioButtonCheckBox.UseVisualStyleBackColor = true;
             // 
             // levelTextBox
             // 
@@ -360,7 +346,7 @@ namespace LoggerApp
             this.InsertGroupBox.Size = new System.Drawing.Size(758, 125);
             this.InsertGroupBox.TabIndex = 0;
             this.InsertGroupBox.TabStop = false;
-            this.InsertGroupBox.Text = "Get files by:";
+            this.InsertGroupBox.Text = "Search log files in folder to be inserted in the Database:";
             // 
             // groupBox1
             // 
@@ -589,11 +575,10 @@ namespace LoggerApp
         private System.Windows.Forms.DateTimePicker insert2DateTimePicker;
         private System.Windows.Forms.TextBox levelTextBox;
         private System.Windows.Forms.TextBox searchMessageTextBox;
-        private System.Windows.Forms.RadioButton datesRangeRadioButton;
-        private System.Windows.Forms.RadioButton dateRadioButton;
         private System.Windows.Forms.RadioButton hundredResultsRadioButton;
         private System.Windows.Forms.RadioButton tenResultsRadioButton;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.CheckBox datesRangeRadioButtonCheckBox;
     }
 }
 

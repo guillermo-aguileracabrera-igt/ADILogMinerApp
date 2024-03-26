@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -142,9 +144,36 @@ namespace LoggerApp
                         return String.Empty;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    WriteToFile(ex.Message);
                     return String.Empty;
+                }
+            }
+        }
+
+        private void WriteToFile(string Message)
+        {
+            //string path = ConfigurationManager.AppSettings["Path"];
+            string path = Directory.GetCurrentDirectory();
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            string filepath = path + "\\loggerApp_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
+            if (!File.Exists(filepath))
+            {
+                // Create a file to write to.
+                using (StreamWriter sw = File.CreateText(filepath))
+                {
+                    sw.WriteLine(Message);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(filepath))
+                {
+                    sw.WriteLine(Message);
                 }
             }
         }
