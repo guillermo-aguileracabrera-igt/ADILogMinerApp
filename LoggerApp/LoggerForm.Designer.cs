@@ -155,7 +155,7 @@ namespace LoggerApp
             // datesRangeRadioButtonCheckBox
             // 
             this.datesRangeRadioButtonCheckBox.AutoSize = true;
-            this.datesRangeRadioButtonCheckBox.Location = new System.Drawing.Point(6, 95);
+            this.datesRangeRadioButtonCheckBox.Location = new System.Drawing.Point(256, 96);
             this.datesRangeRadioButtonCheckBox.Name = "datesRangeRadioButtonCheckBox";
             this.datesRangeRadioButtonCheckBox.Size = new System.Drawing.Size(89, 17);
             this.datesRangeRadioButtonCheckBox.TabIndex = 18;
@@ -165,7 +165,7 @@ namespace LoggerApp
             // levelTextBox
             // 
             this.levelTextBox.Enabled = false;
-            this.levelTextBox.Location = new System.Drawing.Point(256, 27);
+            this.levelTextBox.Location = new System.Drawing.Point(121, 24);
             this.levelTextBox.MaxLength = 5;
             this.levelTextBox.Name = "levelTextBox";
             this.levelTextBox.Size = new System.Drawing.Size(100, 20);
@@ -207,7 +207,7 @@ namespace LoggerApp
             // fileNameCheckBox
             // 
             this.fileNameCheckBox.AutoSize = true;
-            this.fileNameCheckBox.Location = new System.Drawing.Point(121, 60);
+            this.fileNameCheckBox.Location = new System.Drawing.Point(256, 62);
             this.fileNameCheckBox.Name = "fileNameCheckBox";
             this.fileNameCheckBox.Size = new System.Drawing.Size(71, 17);
             this.fileNameCheckBox.TabIndex = 5;
@@ -217,7 +217,7 @@ namespace LoggerApp
             // levelCheckBox
             // 
             this.levelCheckBox.AutoSize = true;
-            this.levelCheckBox.Location = new System.Drawing.Point(121, 27);
+            this.levelCheckBox.Location = new System.Drawing.Point(6, 27);
             this.levelCheckBox.Name = "levelCheckBox";
             this.levelCheckBox.Size = new System.Drawing.Size(52, 17);
             this.levelCheckBox.TabIndex = 5;
@@ -227,7 +227,7 @@ namespace LoggerApp
             // textCheckBox
             // 
             this.textCheckBox.AutoSize = true;
-            this.textCheckBox.Location = new System.Drawing.Point(7, 27);
+            this.textCheckBox.Location = new System.Drawing.Point(256, 27);
             this.textCheckBox.Name = "textCheckBox";
             this.textCheckBox.Size = new System.Drawing.Size(47, 17);
             this.textCheckBox.TabIndex = 5;
@@ -237,7 +237,7 @@ namespace LoggerApp
             // limitMaskedTextBox
             // 
             this.limitMaskedTextBox.Enabled = false;
-            this.limitMaskedTextBox.Location = new System.Drawing.Point(256, 93);
+            this.limitMaskedTextBox.Location = new System.Drawing.Point(121, 62);
             this.limitMaskedTextBox.Mask = "09999";
             this.limitMaskedTextBox.Name = "limitMaskedTextBox";
             this.limitMaskedTextBox.Size = new System.Drawing.Size(100, 20);
@@ -247,7 +247,7 @@ namespace LoggerApp
             // limitCheckBox
             // 
             this.limitCheckBox.AutoSize = true;
-            this.limitCheckBox.Location = new System.Drawing.Point(121, 96);
+            this.limitCheckBox.Location = new System.Drawing.Point(6, 62);
             this.limitCheckBox.Name = "limitCheckBox";
             this.limitCheckBox.Size = new System.Drawing.Size(80, 17);
             this.limitCheckBox.TabIndex = 12;

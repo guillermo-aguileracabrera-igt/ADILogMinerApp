@@ -53,6 +53,7 @@ namespace LoggerApp
             search2DateTimePicker.Value = search2DateTimePicker.MaxDate;
 
 
+
             //Insert group
             allFilesRadioButton.CheckedChanged += new System.EventHandler(insertOptions_CheckedChanged);
             fileAttributesRadioButton.CheckedChanged += new System.EventHandler(insertOptions_CheckedChanged);
@@ -360,6 +361,8 @@ namespace LoggerApp
             limitCheckBox.Checked = false;
             limitMaskedTextBox.Text = String.Empty;
             limitMaskedTextBox.Enabled = false;
+            totalRowLbl.Text = "";
+            totalResultsLbl.Visible = false;
         }
 
 
@@ -409,7 +412,7 @@ namespace LoggerApp
                 tenResultsRadioButton.Enabled = true;
                 hundredResultsRadioButton.Enabled = true;
             }
-            else
+            else if(!patternCheckBox.Checked)
             {
                 filePatternTextBox.Enabled = false;
                 tenResultsRadioButton.Enabled = false;
@@ -422,7 +425,7 @@ namespace LoggerApp
                 tenResultsRadioButton.Enabled = true;
                 hundredResultsRadioButton.Enabled = true;
             }
-            else
+            else if(!messageTextCheckBox.Checked)
             {
                 messageTextBox.Enabled = false;
                 tenResultsRadioButton.Enabled = false;
@@ -436,7 +439,7 @@ namespace LoggerApp
                 tenResultsRadioButton.Enabled = true;
                 hundredResultsRadioButton.Enabled = true;
             }
-            else
+            else if (!logDateCheckBox.Checked)
             {
                 insert1DateTimePicker.Enabled = false;
                 insert2DateTimePicker.Enabled = false;
@@ -595,7 +598,7 @@ namespace LoggerApp
 
         private void insertBtn_Click(object sender, EventArgs e)
         {
-            Search();
+            Search(true);
 
             int rows = 0;
 
@@ -626,7 +629,8 @@ namespace LoggerApp
                 }
             }
 
-            MessageBox.Show($"{rows} rows inserted.");
+            MessageBox.Show($"{Math.Abs(rows).ToString()} rows inserted.");
+            totalResultsLbl.Text = Math.Abs(rows).ToString() + " rows inserted.";
         }
 
         private int FillResultsListView(List<FileInfo> results = null, List<List<string>> queries = null)
@@ -648,7 +652,7 @@ namespace LoggerApp
                 else
                 {
                     insertGoButton.Enabled = false;
-                    clearSearchButton.Enabled = false;
+                    clearSearchButton.Enabled = true;
                 }
 
                 res = results.Count();
@@ -733,10 +737,15 @@ namespace LoggerApp
             return files;
         }
 
-        private Dictionary<FileInfo, List<List<string>>> SearchText(List<FileInfo> files, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
+        private Dictionary<FileInfo, List<List<string>>> SearchText(List<FileInfo> files, bool isInsert = false, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
         {
             StreamReader reader = null;
             Dictionary<FileInfo, List<List<string>>> results = new Dictionary<FileInfo, List<List<string>>>();
+
+            if(files.Count < 1)
+            {
+                return new Dictionary<FileInfo, List<List<string>>>();
+            }
 
             foreach (FileInfo f in files)
             {
@@ -778,13 +787,13 @@ namespace LoggerApp
                 }
             }
 
-            if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled)
+            if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
             {
                 FileInfo k = results.FirstOrDefault(x => x.Value.Count >= 100).Key;
                 List<List<string>> v = results[k].Take(10).ToList();
                 return new Dictionary<FileInfo, List<List<string>>>() { { k, v } };
             }
-            else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled)
+            else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
             {
                 FileInfo k = results.FirstOrDefault(x => x.Value.Count >= 100).Key;
                 List<List<string>> v = results[k].Take(100).ToList();
@@ -1084,7 +1093,7 @@ namespace LoggerApp
             }
         }
 
-        private void Search()
+        private void Search(bool isInsert = false)
         {
             resultsListView.Items.Clear();
             DirectoryInfo directory = new DirectoryInfo(path);
@@ -1103,111 +1112,111 @@ namespace LoggerApp
 
                 res = GetFiles(directory);
 
-                if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled)
+                if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
                 {
                     res = res.Take(10).ToList();
                 }
-                else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled)
+                else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
                 {
                     res = res.Take(100).ToList();
                 }
 
                 totalRes = Int32.Parse(FillResultsListView(res).ToString());
 
-                dic = SearchText(res, CleanString(messageTextBox.Text), null, null);
+                dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), null, null);
             }
             else if (fileAttributesRadioButton.Checked)
             {
                 resultsListView.Clear();
 
-                if (patternCheckBox.Checked && !messageTextCheckBox.Checked && !logDateCheckBox.Checked) //100
+                if (patternCheckBox.Checked && filePatternTextBox.Enabled && !messageTextCheckBox.Checked && !logDateCheckBox.Checked) //100
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res);
+                    dic = SearchText(res, isInsert);
 
-                    if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled)
+                    if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
                     {
                         res = res.Take(10).ToList();
                     }
-                    else if(hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled)
+                    else if(hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
                     {
                         res = res.Take(100).ToList();
                     }
 
                     totalRes += Int32.Parse(FillResultsListView(res).ToString());
                 }
-                else if (!patternCheckBox.Checked && messageTextCheckBox.Checked && !logDateCheckBox.Checked) //010
+                else if (!patternCheckBox.Checked && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //010
                 {
                     res = GetFiles(directory);
-                    dic = SearchText(res, CleanString(messageTextBox.Text));
+                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
 
                     foreach (var d in dic)
                     {
                         totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
                     }
                 }
-                else if (!patternCheckBox.Checked && !messageTextCheckBox.Checked && logDateCheckBox.Checked) //001
-                {
-                    res = GetFiles(directory);
-                    date1 = insert1DateTimePicker.Value;
-                    date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, "", date1, date2);
-
-                    foreach (var d in dic)
-                    {
-                        totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
-                    }
-                }
-                else if (patternCheckBox.Checked && messageTextCheckBox.Checked && !logDateCheckBox.Checked) //110
-                {
-                    res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res, CleanString(messageTextBox.Text));
-
-                    foreach (var d in dic)
-                    {
-                        totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
-                    }
-                }
-                else if (!patternCheckBox.Checked && messageTextCheckBox.Checked && logDateCheckBox.Checked) //011
+                else if (!patternCheckBox.Checked && !messageTextCheckBox.Checked && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled ) //001
                 {
                     res = GetFiles(directory);
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, CleanString(messageTextBox.Text), date1, date2);
+                    dic = SearchText(res, isInsert, "", date1, date2);
 
                     foreach (var d in dic)
                     {
                         totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
                     }
                 }
-                else if (patternCheckBox.Checked && !messageTextCheckBox.Checked && logDateCheckBox.Checked) //101
+                else if (patternCheckBox.Checked && filePatternTextBox.Enabled && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //110
+                {
+                    res = GetFiles(directory, CleanString(filePatternTextBox.Text));
+                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
+
+                    foreach (var d in dic)
+                    {
+                        totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
+                    }
+                }
+                else if (!patternCheckBox.Checked && messageTextCheckBox.Checked && messageTextBox.Enabled && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled) //011
+                {
+                    res = GetFiles(directory);
+                    date1 = insert1DateTimePicker.Value;
+                    date2 = insert2DateTimePicker.Value;
+                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
+
+                    foreach (var d in dic)
+                    {
+                        totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
+                    }
+                }
+                else if (patternCheckBox.Checked && filePatternTextBox.Enabled && !messageTextCheckBox.Checked && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled) //101
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, "", date1, date2);
+                    dic = SearchText(res, isInsert, "", date1, date2);
 
                     foreach (var d in dic)
                     {
                         totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
                     }
                 }
-                else if (patternCheckBox.Checked && messageTextCheckBox.Checked && !logDateCheckBox.Checked) //110
+                else if (patternCheckBox.Checked && filePatternTextBox.Enabled && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //110
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res, CleanString(messageTextBox.Text));
+                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
 
                     foreach (var d in dic)
                     {
                         totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
                     }
                 }
-                else if (patternCheckBox.Checked && messageTextCheckBox.Checked && logDateCheckBox.Checked) //111
+                else if (patternCheckBox.Checked && filePatternTextBox.Enabled && messageTextCheckBox.Checked && messageTextBox.Enabled && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled) //111
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, CleanString(messageTextBox.Text), date1, date2);
+                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
 
                     foreach (var d in dic)
                     {
