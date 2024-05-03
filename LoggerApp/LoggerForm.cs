@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -177,10 +178,22 @@ namespace LoggerApp
             }
         }
 
-        private void searchBtn_Click(object sender, EventArgs e)
+        private async void searchBtn_Click(object sender, EventArgs e)
+        {
+            using (WaitForm waitScreen = new WaitForm())
+            {
+                waitScreen.Show();
+                await SearchInDataBase();
+                waitScreen.Close();
+            }
+        }
+
+        private async Task SearchInDataBase()
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
+                await conn.OpenAsync();
+
                 using (SqlCommand cmd = new SqlCommand("Proc_Search_ADI_Logs", conn))
                 {
                     try
@@ -204,7 +217,7 @@ namespace LoggerApp
                             sDate1 = search1DateTimePicker.Value;
                             sDate2 = search2DateTimePicker.Value;
                         }
-                        if(!datesRangeRadioButtonCheckBox.Checked && !search1DateTimePicker.Enabled && !search2DateTimePicker.Enabled)
+                        if (!datesRangeRadioButtonCheckBox.Checked && !search1DateTimePicker.Enabled && !search2DateTimePicker.Enabled)
                         {
                             sDate1 = null;
                             sDate2 = null;
@@ -223,23 +236,13 @@ namespace LoggerApp
                         }
 
                         cmd.Parameters.AddWithValue("@Message", msg); // Message / Text
-                        cmd.Parameters.AddWithValue("@Date1",sDate1); // Date
+                        cmd.Parameters.AddWithValue("@Date1", sDate1); // Date
                         cmd.Parameters.AddWithValue("@Date2", sDate2); //Dates Range
                         cmd.Parameters.AddWithValue("@Level", lvl); // Level
                         cmd.Parameters.AddWithValue("@FileName", filename); // File name
                         cmd.Parameters.AddWithValue("@Limit", Convert.ToInt32(limit));
 
-                        //string query = cmd.CommandText;
-
-                        //foreach (SqlParameter p in cmd.Parameters)
-                        //{
-                        //    query = query.Replace(p.ParameterName, p.Value.ToString());
-                        //}
-
-                        //query.ToString();
-
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
 
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                         adapter.Fill(table);
@@ -527,13 +530,13 @@ namespace LoggerApp
             hundredResultsRadioButton.Checked = false;
         }
 
-        private void clearTableBtn_Click(object sender, EventArgs e)
+        private async void clearTableBtn_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will delete all records in the Log table. Are you sure you want to proceed?", "Delete records", MessageBoxButtons.OKCancel);
 
             if(dialogResult == DialogResult.OK)
             {
-                ClearLogTable();
+                await ClearLogTable();
             }
         }
 
@@ -591,42 +594,61 @@ namespace LoggerApp
             }
         }
 
-        private void testSearchFilesBtn_Click(object sender, EventArgs e)
+        private async void testSearchFilesBtn_Click(object sender, EventArgs e)
         {
-            Search();
+            using (WaitForm waitScreen = new WaitForm())
+            {
+                waitScreen.Show();
+                await SearchInFiles();
+                waitScreen.Close();
+            }
         }
 
-        private void insertBtn_Click(object sender, EventArgs e)
+        private async void insertBtn_Click(object sender, EventArgs e)
         {
-            Search(true);
-
             int rows = 0;
 
-            if (resultsListView.SelectedItems.Count == 0)
+            using (WaitForm waitScreen = new WaitForm())
             {
-                foreach (KeyValuePair<FileInfo, List<List<string>>> d in dic)
+                waitScreen.Show();
+
+                await SearchInFiles(true);
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    foreach (List<string> s in d.Value)
+                    await conn.OpenAsync();
+
+                    
+
+                    if (resultsListView.SelectedItems.Count == 0)
                     {
-                        rows += ExecQueries(s);
-                    }
-                }
-            }
-            else
-            {
-                foreach (ListViewItem r in resultsListView.SelectedItems)
-                {
-                    foreach (KeyValuePair<FileInfo, List<List<string>>> d in dic)
-                    {
-                        if (r.Text.Contains(d.Key.Name))
+                        foreach (KeyValuePair<FileInfo, List<List<string>>> d in dic)
                         {
                             foreach (List<string> s in d.Value)
                             {
-                                rows += ExecQueries(s);
+                                rows += await ExecQueries(s, conn);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (ListViewItem r in resultsListView.SelectedItems)
+                        {
+                            foreach (KeyValuePair<FileInfo, List<List<string>>> d in dic)
+                            {
+                                if (r.Text.Contains(d.Key.Name))
+                                {
+                                    foreach (List<string> s in d.Value)
+                                    {
+                                        rows += await ExecQueries(s, conn);
+                                    }
+                                }
                             }
                         }
                     }
                 }
+
+              waitScreen.Close();
             }
 
             MessageBox.Show($"{Math.Abs(rows).ToString()} rows inserted.");
@@ -685,29 +707,39 @@ namespace LoggerApp
 
         //COMMON
 
-        private void ClearLogTable()
+        private async Task ClearLogTable()
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                using (SqlCommand cmd = new SqlCommand("TRUNCATE TABLE [dbo].[Log]", conn))
-                {
-                    try
-                    {
-                        cmd.CommandType = System.Data.CommandType.Text;
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
 
-                        MessageBox.Show("Table cleared.");
-                    }
-                    catch (Exception ex)
+                using (WaitForm waitScreen = new WaitForm())
+                {
+                    waitScreen.Show();
+
+                    await conn.OpenAsync();
+
+                    using (SqlCommand cmd = new SqlCommand("TRUNCATE TABLE [dbo].[Log]", conn))
                     {
-                        //Console.WriteLine(ex.Message);
-                        WriteToFile($"clearlogtable --> {ex.Message}");
+                        try
+                        {
+                            cmd.CommandType = System.Data.CommandType.Text;
+                            //conn.Open();
+                            await cmd.ExecuteNonQueryAsync();
+
+                            MessageBox.Show("Table cleared.");
+                        }
+                        catch (Exception ex)
+                        {
+                            //Console.WriteLine(ex.Message);
+                            WriteToFile($"clearlogtable --> {ex.Message}");
+                        }
+                        finally
+                        {
+                            conn.Close();
+                        }
                     }
-                    finally
-                    {
-                        conn.Close();
-                    }
+
+                    waitScreen.Close();
                 }
             }
         }
@@ -717,29 +749,34 @@ namespace LoggerApp
             string cleanName = CleanString(name);
             List<FileInfo> files = new List<FileInfo>();
 
-            try
+            var t = Task.Run(() =>
             {
-                if (cleanName == "")
+                try
                 {
-                    files = directory.GetFiles("*.log").ToList();
+                    if (cleanName == "")
+                    {
+                        files = directory.GetFiles("*.log").ToList();
+                    }
+                    else
+                    {
+                        files = directory.GetFiles(cleanName + "*.log").ToList();
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    files = directory.GetFiles(cleanName + "*.log").ToList();
+                    //MessageBox.Show(File not found. Check for the correct folder in App.config);
+                    WriteToFile($"Exception -> GetFiles -> { ex.Message }");
                 }
-            }
-            catch (Exception ex)
-            {
-                //MessageBox.Show(File not found. Check for the correct folder in App.config);
-                WriteToFile($"Exception -> GetFiles -> { ex.Message }");
-            }
+            });
 
+            t.Wait();
+ 
             return files;
         }
 
-        private Dictionary<FileInfo, List<List<string>>> SearchText(List<FileInfo> files, bool isInsert = false, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
+        private async Task<Dictionary<FileInfo, List<List<string>>>> SearchText(List<FileInfo> files, bool isInsert = false, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
         {
-            StreamReader reader = null;
+            //StreamReader reader = null;
             Dictionary<FileInfo, List<List<string>>> results = new Dictionary<FileInfo, List<List<string>>>();
 
             if(files.Count < 1)
@@ -747,66 +784,103 @@ namespace LoggerApp
                 return new Dictionary<FileInfo, List<List<string>>>();
             }
 
-            foreach (FileInfo f in files)
+            foreach(FileInfo f in files) 
             {
                 try
                 {
                     List<List<string>> queries = new List<List<string>>();
-                    reader = new StreamReader(f.FullName);
-
-                    queries.AddRange(CreateQueries(reader, f.Name, lineFilter, date1, date2));
-
-                    if (queries.Count > 0)
+                    //reader = new StreamReader(f.FullName);
+                    using(StreamReader reader = new StreamReader(f.FullName))
                     {
-                        //WriteToFile("createQueries -> " + f.Name);
-                        results.Add(f, queries);
+                        queries.AddRange(await CreateQueries(reader, f.Name, lineFilter, date1, date2));
+
+                        if (queries.Count > 0)
+                        {
+                            results.Add(f, queries);
+                        }
                     }
-                    //else
-                    //{
-                    //    MessageBox.Show("No files found.");
-
-                    //    DialogResult dialogResult = MessageBox.Show("Warning", "No records found.", MessageBoxButtons.OK);
-
-                    //    if (dialogResult == DialogResult.OK)
-                    //    {
-                    //        clearInsertForm();
-                    //        return results;
-                    //    }
-                    //    //WriteToFile($"ALARM!! NO QUERIES! -> { f.Name }");
-                    //}
                 }
                 catch (Exception ex)
                 {
                     //MessageBox.Show(ex.Message);
                     WriteToFile($"Exception -> SearchText -> { ex.Message }");
                 }
-                finally
-                {
-                    reader.Close();
-                    reader.Dispose();
-                }
+                //finally
+                //{
+                //    reader.Close();
+                //    reader.Dispose();
+                //}
             }
 
             if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
             {
-                FileInfo k = results.FirstOrDefault(x => x.Value.Count >= 100).Key;
-                List<List<string>> v = results[k].Take(10).ToList();
-                return new Dictionary<FileInfo, List<List<string>>>() { { k, v } };
+                return takeElememts(results, 10);
             }
             else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
             {
-                FileInfo k = results.FirstOrDefault(x => x.Value.Count >= 100).Key;
-                List<List<string>> v = results[k].Take(100).ToList();
-                return new Dictionary<FileInfo, List<List<string>>>() { { k, v } };
+                return takeElememts(results, 100);
             }
 
             return results;
         }
 
-        private List<List<string>> CreateQueries(StreamReader reader, string fileName, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
+        private Dictionary<FileInfo, List<List<string>>> takeElememts(Dictionary<FileInfo, List<List<string>>> results, int numElements)
+        {
+            int elemSum = 0;
+            Dictionary<FileInfo, List<List<string>>> ret = new Dictionary<FileInfo, List<List<string>>>();
+
+            if(numElements == 10)
+            {
+                foreach (KeyValuePair<FileInfo, List<List<string>>> r in results)
+                {
+                    if (r.Value.Count >= 10)
+                    {
+                        ret.Add(r.Key, r.Value);
+                    }
+                    else
+                    {
+                        elemSum += r.Value.Count;
+
+                        if (elemSum >= 10)
+                        {
+                            break;
+                        }
+
+                        ret.Add(r.Key, r.Value);
+                    }
+                }
+            }
+            else if (numElements == 100)
+            {
+                foreach (KeyValuePair<FileInfo, List<List<string>>> r in results)
+                {
+                    if (r.Value.Count >= 100)
+                    {
+                        ret.Add(r.Key, r.Value);
+                        break;
+                    }
+                    else
+                    {
+                        elemSum += r.Value.Count;
+
+                        if (elemSum >= 100)
+                        {
+                            break;
+                        }
+
+                        ret.Add(r.Key, r.Value);
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        private async Task<List<List<string>>> CreateQueries(StreamReader reader, string fileName, string lineFilter = "", DateTime? date1 = null, DateTime? date2 = null)
         {
             List<List<string>> queries = new List<List<string>>();
-            String line = reader.ReadLine();
+            //String line = reader.ReadLine();
+            String line = await reader.ReadLineAsync();
             DateTime? startDate = DateTime.MinValue;
             DateTime? endDate = DateTime.MinValue;
             StringBuilder sb = new StringBuilder();
@@ -861,7 +935,6 @@ namespace LoggerApp
                         checkDate = true;
                     }
 
-                    //if (!DateTime.TryParse(spl[0], out DateTime d3))
                     if (!DateTime.TryParseExact(spl[0], "MM/dd/yy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d3))
                     {
                         if (lineCounter == 1)
@@ -890,8 +963,6 @@ namespace LoggerApp
                         {
                             if (!isMsg && logMsg == "")
                             {
-                                //DateTime sDateTime = DateTime.Parse(spl[0] + " " + spl[1]);
-                                //if (checkDate && ((sDateTime < startDate) || (sDateTime > endDate)))
                                 DateTime sDateTime = DateTime.MinValue;
                                 if (spl.Length > 2 && DateTime.TryParseExact(spl[0] + " " + spl[1], "MM/dd/yy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dd))
                                 {
@@ -969,19 +1040,6 @@ namespace LoggerApp
                     }
 
                     line = reader.ReadLine();
-
-                    //if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && queries.Count >= 10)
-                    //{
-                    //    queries = queries.Take(10).ToList();
-
-                    //    return queries;
-                    //}
-                    //else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && queries.Count >= 100)
-                    //{
-                    //    queries = queries.Take(100).ToList();
-
-                    //    return queries;
-                    //}
                 }
 
                 return queries;
@@ -993,63 +1051,53 @@ namespace LoggerApp
 
                 return queries;
             }
-            finally
-            {
-                reader.Close();
-                reader.Dispose();
-            }
+            //finally
+            //{
+            //    reader.Close();
+            //    reader.Dispose();
+            //}
         }
 
-        private int ExecQueries(List<string> query)
+        private async Task<int> ExecQueries(List<string> query, SqlConnection conn)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            //using (SqlConnection conn = new SqlConnection(connectionString))
+            //{
+            //    await conn.OpenAsync();
+
+            using (SqlCommand cmd = new SqlCommand("Proc_Insert_ADI_Logs", conn))
             {
-                using (SqlCommand cmd = new SqlCommand("Proc_Insert_ADI_Logs", conn))
+                try
                 {
-                    try
-                    {
-                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@Date", DateTime.Parse(query[0]));
-                        cmd.Parameters.AddWithValue("@Thread", query[1]);
-                        cmd.Parameters.AddWithValue("@Logger", query[2]);
-                        cmd.Parameters.AddWithValue("@LevelID", query[3]);
-                        cmd.Parameters.AddWithValue("@Message", query[4]);
-                        cmd.Parameters.AddWithValue("@FileName", query[5].Replace(" -- file: ", ""));
-                        conn.Open();
-                        rows += cmd.ExecuteNonQuery();
-                        //cmd.ExecuteNonQuery();
-                        //string query = cmd.CommandText;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Date", DateTime.Parse(query[0]));
+                    cmd.Parameters.AddWithValue("@Thread", query[1]);
+                    cmd.Parameters.AddWithValue("@Logger", query[2]);
+                    cmd.Parameters.AddWithValue("@LevelID", query[3]);
+                    cmd.Parameters.AddWithValue("@Message", query[4]);
+                    cmd.Parameters.AddWithValue("@FileName", query[5].Replace(" -- file: ", ""));
 
-                        //foreach (SqlParameter p in cmd.Parameters)
-                        //{
-                        //    query = query.Replace(p.ParameterName, p.Value.ToString());
-                        //}
-
-                        //Console.WriteLine(query);
-
-                        //Console.WriteLine($"{rows} rows inserted.");
-                        //rows++;
-                    }
-                    catch (Exception ex)
-                    {
-                        cmd.Parameters.AddWithValue("@Exception", ex.Message);
-                        string q = cmd.CommandText;
-
-                        foreach (SqlParameter p in cmd.Parameters)
-                        {
-                            q = q.Replace(p.ParameterName, p.Value.ToString());
-                            //Console.WriteLine(query);
-                        }
-
-                        //MessageBox.Show(ex.Message);
-                        WriteToFile($"Exception --> ExecQueries --> {ex.Message}");
-                        //add insert exception to DB!
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
+                    rows += await cmd.ExecuteNonQueryAsync();
                 }
+                catch (Exception ex)
+                {
+                    cmd.Parameters.AddWithValue("@Exception", ex.Message);
+                    string q = cmd.CommandText;
+
+                    foreach (SqlParameter p in cmd.Parameters)
+                    {
+                        q = q.Replace(p.ParameterName, p.Value.ToString());
+                        //Console.WriteLine(query);
+                    }
+
+                    //MessageBox.Show(ex.Message);
+                    WriteToFile($"Exception --> ExecQueries --> {ex.Message}");
+                    //add insert exception to DB!
+                }
+                //finally
+                //{
+                //    conn.Close();
+                //}
+                //    }
             }
 
             return rows++;
@@ -1093,7 +1141,7 @@ namespace LoggerApp
             }
         }
 
-        private void Search(bool isInsert = false)
+        private async Task<bool> SearchInFiles(bool isInsert = false)
         {
             resultsListView.Items.Clear();
             DirectoryInfo directory = new DirectoryInfo(path);
@@ -1101,8 +1149,6 @@ namespace LoggerApp
             DateTime? date1 = null;
             DateTime? date2 = null;
             List<FileInfo> res = new List<FileInfo>();
-            //res.ForEach(x => WriteToFile("searchfile - " + x.Name));
-            //List<FileInfo> auxRes = new List<FileInfo>();
 
             totalResultsLbl.Visible = true;
 
@@ -1110,20 +1156,29 @@ namespace LoggerApp
             {
                 resultsListView.Clear();
 
-                res = GetFiles(directory);
-
-                if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
+                using (WaitForm waitScreen = new WaitForm())
                 {
-                    res = res.Take(10).ToList();
-                }
-                else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
-                {
-                    res = res.Take(100).ToList();
-                }
+                    waitScreen.Show();
 
-                totalRes = Int32.Parse(FillResultsListView(res).ToString());
+                    res = GetFiles(directory);
 
-                dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), null, null);
+                    if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
+                    {
+                        res = res.Take(10).ToList();
+                    }
+                    else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
+                    {
+                        res = res.Take(100).ToList();
+                    }
+
+                    totalRes = Int32.Parse(FillResultsListView(res).ToString());
+
+
+                    
+                    dic = await SearchText(res, isInsert, "", null, null);
+
+                    waitScreen.Close();
+                }
             }
             else if (fileAttributesRadioButton.Checked)
             {
@@ -1132,13 +1187,19 @@ namespace LoggerApp
                 if (patternCheckBox.Checked && filePatternTextBox.Enabled && !messageTextCheckBox.Checked && !logDateCheckBox.Checked) //100
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res, isInsert);
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert);
+                        waitScreen.Close();
+                    }
 
                     if (tenResultsRadioButton.Checked && tenResultsRadioButton.Enabled && !isInsert)
                     {
                         res = res.Take(10).ToList();
                     }
-                    else if(hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
+                    else if (hundredResultsRadioButton.Checked && hundredResultsRadioButton.Enabled && !isInsert)
                     {
                         res = res.Take(100).ToList();
                     }
@@ -1148,19 +1209,31 @@ namespace LoggerApp
                 else if (!patternCheckBox.Checked && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //010
                 {
                     res = GetFiles(directory);
-                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, CleanString(messageTextBox.Text));
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
                         totalRes += Int32.Parse(FillResultsListView(null, d.Value).ToString());
                     }
                 }
-                else if (!patternCheckBox.Checked && !messageTextCheckBox.Checked && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled ) //001
+                else if (!patternCheckBox.Checked && !messageTextCheckBox.Checked && logDateCheckBox.Checked && insert1DateTimePicker.Enabled && insert2DateTimePicker.Enabled) //001
                 {
                     res = GetFiles(directory);
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, isInsert, "", date1, date2);
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, "", date1, date2);
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1170,7 +1243,13 @@ namespace LoggerApp
                 else if (patternCheckBox.Checked && filePatternTextBox.Enabled && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //110
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, CleanString(messageTextBox.Text));
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1182,7 +1261,13 @@ namespace LoggerApp
                     res = GetFiles(directory);
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1194,7 +1279,13 @@ namespace LoggerApp
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, isInsert, "", date1, date2);
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, "", date1, date2);
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1204,7 +1295,13 @@ namespace LoggerApp
                 else if (patternCheckBox.Checked && filePatternTextBox.Enabled && messageTextCheckBox.Checked && messageTextBox.Enabled && !logDateCheckBox.Checked) //110
                 {
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
-                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text));
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, CleanString(messageTextBox.Text));
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1216,7 +1313,13 @@ namespace LoggerApp
                     res = GetFiles(directory, CleanString(filePatternTextBox.Text));
                     date1 = insert1DateTimePicker.Value;
                     date2 = insert2DateTimePicker.Value;
-                    dic = SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
+
+                    using (WaitForm waitScreen = new WaitForm())
+                    {
+                        waitScreen.Show();
+                        dic = await SearchText(res, isInsert, CleanString(messageTextBox.Text), date1, date2);
+                        waitScreen.Close();
+                    }
 
                     foreach (var d in dic)
                     {
@@ -1226,6 +1329,8 @@ namespace LoggerApp
             }
 
             totalResultsLbl.Text = totalRes.ToString() + " items found.";
+
+            return true;
         }
 
         private void LoggerForm_FormClosed(object sender, FormClosedEventArgs e)

@@ -224,6 +224,7 @@ namespace LoggerApp
             this.ClientSize = new System.Drawing.Size(784, 261);
             this.Controls.Add(this.panel1);
             this.Name = "LoginForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Login";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();

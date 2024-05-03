@@ -29,28 +29,29 @@ namespace LoggerApp
         /// </summary>
         private void InitializeComponent()
         {
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.processingLbl = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
-            // progressBar1
+            // processingLbl
             // 
-            this.progressBar1.Location = new System.Drawing.Point(12, 57);
-            this.progressBar1.MarqueeAnimationSpeed = 50;
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(224, 29);
-            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBar1.TabIndex = 0;
+            this.processingLbl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.processingLbl.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.processingLbl.Location = new System.Drawing.Point(0, 0);
+            this.processingLbl.Name = "processingLbl";
+            this.processingLbl.Size = new System.Drawing.Size(198, 77);
+            this.processingLbl.TabIndex = 0;
+            this.processingLbl.Text = "Processing...";
+            this.processingLbl.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // WaitForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
-            this.CausesValidation = false;
-            this.ClientSize = new System.Drawing.Size(248, 98);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
+            this.ClientSize = new System.Drawing.Size(198, 77);
             this.ControlBox = false;
-            this.Controls.Add(this.progressBar1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Controls.Add(this.processingLbl);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "WaitForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.ResumeLayout(false);
@@ -59,6 +60,6 @@ namespace LoggerApp
 
         #endregion
 
-        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.Label processingLbl;
     }
 }
