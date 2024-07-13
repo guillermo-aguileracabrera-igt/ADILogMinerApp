@@ -154,8 +154,7 @@ namespace LoggerApp
 
         private void WriteToFile(string Message)
         {
-            //string path = ConfigurationManager.AppSettings["Path"];
-            string path = Directory.GetCurrentDirectory();
+            string path = ConfigurationManager.AppSettings["ErrorsLogPath"] + "\\writeLogs";
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);

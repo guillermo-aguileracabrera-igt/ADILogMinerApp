@@ -38,9 +38,10 @@ namespace LoggerApp
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.processingLbl.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.processingLbl.Location = new System.Drawing.Point(0, 0);
+            this.processingLbl.Location = new System.Drawing.Point(9, 9);
+            this.processingLbl.Margin = new System.Windows.Forms.Padding(0);
             this.processingLbl.Name = "processingLbl";
-            this.processingLbl.Size = new System.Drawing.Size(198, 77);
+            this.processingLbl.Size = new System.Drawing.Size(180, 59);
             this.processingLbl.TabIndex = 0;
             this.processingLbl.Text = "Processing...";
             this.processingLbl.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
